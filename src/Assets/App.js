@@ -15,3 +15,9 @@ window.Spotify = {
         }
     }
 }
+
+window.onload = () => {
+    fetch('/api/user')
+        .then(res => console.log(res.json()))
+        .catch(err => console.error(err))
+}

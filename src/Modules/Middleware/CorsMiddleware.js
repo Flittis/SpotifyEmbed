@@ -1,6 +1,7 @@
 import Config from "../../Config.js";
 
 export default async (req, res, next) => {
+    req.acceptHTML = /text\/html/.test(req.get('accept'))
     Object.assign(req.query, req.body)
     
     res.res = (_response, isError) => res.json({ [isError ? 'error' : 'response']: _response })

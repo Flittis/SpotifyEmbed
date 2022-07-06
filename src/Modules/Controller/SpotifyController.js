@@ -28,8 +28,31 @@ let SpotifyController = {
             res.cookie('access_token', access_token, { secure: true, sameSite: 'None', maxAge: 3600 * 1000 })
             res.cookie('refresh_token', refresh_token, { secure: true, sameSite: 'None', maxAge: 8760 * 3600000 })
             res.cookie('user', JSON.stringify({ id, name, image, uri }), { secure: true, sameSite: 'None', maxAge: 8760 * 3600000 })
-            res.res({ success: true, id, uri, name, image })
+
+            if (req.acceptHTML) res.set('Content-Type', 'text/html').render('Callback')
+            else res.res({ success: true, id, uri, name, image })
         } catch (e) {
+            console.error(e)
+            next(e)
+        }
+    },
+    user: async (req, res, next) => {   
+        try {
+            if (!req.cookies.refresh_token || !req.cookies.user) return next(new Err(401))
+
+            let User = {}
+            try {
+                User = JSON.parse(req.cookies.user)
+            } catch(e) {}
+
+            res.res({ refresh_token: req.cookies.refresh_token, User })
+        } catch (e) {
+            if (e == 'Invalid session') {
+                ['access_token', 'refresh_token', 'user'].forEach(el => res.clearCookie(el))
+                return next(new Err(401))
+            }
+            if (e == 'invalid id') return next(new Err(404, 'Item not found'))
+
             console.error(e)
             next(e)
         }
@@ -38,7 +61,7 @@ let SpotifyController = {
         try {
             let { mediaType: type, id } = req.params
             if (!Object.keys(MediaTypes).includes(type)) return next(new Err(404))
-            if (!req.cookies.refresh_token || !req.cookies.user) return next(new Err(401))
+            if (!req.cookies.refresh_token || !req.cookies.user) return res.set('Content-Type', 'text/html').render('Authorization')
 
             let Response = await Spotify.call(`${MediaTypes[type]}/${id}`, { refresh_token: req.cookies.refresh_token, access_token: req.cookies.access_token }), User = {}
             try {
@@ -47,12 +70,11 @@ let SpotifyController = {
 
             if (!Response || !Response.id) return next(new Err(404))
 
-            res.set('Content-Type', 'text/html')
-            res.render('Media', { ...new MediaClass(Response), User })
+            res.set('Content-Type', 'text/html').render('Media', { ...new MediaClass(Response), User })
         } catch (e) {
             if (e == 'Invalid session') {
                 ['access_token', 'refresh_token', 'user'].forEach(el => res.clearCookie(el))
-                return next(new Err(401))
+                return res.set('Content-Type', 'text/html').render('Authorization')
             }
             if (e == 'invalid id') return next(new Err(404, 'Item not found'))
 
