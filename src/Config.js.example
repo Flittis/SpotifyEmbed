@@ -1,0 +1,10 @@
+export default {
+    DOMAINS: [ 'example.com' ],
+    SERVER_PORT: 3000,
+    SPOTIFY: {
+        client_id: '',
+        client_secret: '',
+        redirect_uri: 'http://localhost:3000/api/callback',
+        scopes: 'user-modify-playback-state'
+    }
+}
